@@ -41,9 +41,140 @@ async function run() {
     // database
     const db = client.db('e-commerce-analytics-dashboard');
     // collection
-    await db.collection('orders');
-    await db.collection('products');
-    await db.collection('users');
+    const usersCollection = await db.collection('users');
+    const productsCollection = await db.collection('products');
+    const ordersCollection = await db.collection('orders');
+
+    // dashboard analytics endpoint
+    app.get('/api/dashboard/analytics', async (req, res) => {
+      try {
+        const cacheAnalytics = cache.get('dashboardAnalytics');
+        if (cacheAnalytics) {
+          return res.json({ message: 'Cached data:', cacheAnalytics });
+        }
+        // handle jobs parallelly
+        const [
+          activeUsers,
+          totalProducts,
+          totalRevenueData,
+          monthlySalesData,
+          inventoryMetrics,
+        ] = await Promise.all([
+          usersCollection.countDocuments(),
+          productsCollection.countDocuments(),
+          // total revenue and total orders
+          ordersCollection
+            .aggregate([
+              {
+                $group: {
+                  _id: null,
+                  totalRevenue: {
+                    $sum: '$totalAmount',
+                  },
+                  totalOrders: {
+                    $sum: 1,
+                  },
+                },
+              },
+            ])
+            .toArray(),
+          // monthly sales data
+          ordersCollection
+            .aggregate([
+              {
+                $group: {
+                  _id: {
+                    year: {
+                      $year: '$orderDate',
+                    },
+                    month: {
+                      $month: '$orderDate',
+                    },
+                  },
+                  revenue: {
+                    $sum: '$totalAmount',
+                  },
+                  orders: {
+                    $sum: 1,
+                  },
+                },
+              },
+              {
+                $project: {
+                  _id: 0,
+                  year: '$_id.year',
+                  month: '$_id.month',
+                  revenue: 1,
+                  orders: 1,
+                },
+              },
+              {
+                $sort: {
+                  year: 1,
+                  month: 1,
+                },
+              },
+            ])
+            .toArray(),
+          // inventory metrics
+          productsCollection
+            .aggregate([
+              {
+                $group: {
+                  _id: null,
+                  totalStocks: {
+                    $sum: '$stock',
+                  },
+                  averageStock: {
+                    $avg: '$stock',
+                  },
+                  lowStock: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $lte: ['$stock', 10],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  outOfStock: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $eq: ['$stock', 0],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            ])
+            .toArray(),
+          //
+        ]);
+
+        const analyticsData = {
+          activeUsers,
+          totalProducts,
+          totalRevenueData,
+          monthlySalesData,
+          inventoryMetrics,
+        };
+        // set cache data, analyticsData is assigned to cacheAnalytics (ln: 51), remains 10 min in cache
+        cache.set('dashboardAnalytics', analyticsData, 600);
+
+        res.json(analyticsData);
+      } catch (error) {
+        console.log(error);
+        res
+          .status(500)
+          .json({ message: 'Internal server error', error: error.message });
+      }
+    });
 
     // ===============>
 
