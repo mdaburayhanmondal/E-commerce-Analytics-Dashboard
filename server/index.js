@@ -227,13 +227,34 @@ async function run() {
             .toArray(),
         ]);
 
+        const { totalRevenue, totalOrders } = totalRevenueData[0];
+
         const analyticsData = {
           activeUsers,
           totalProducts,
-          totalRevenueData,
+          totalRevenue,
           monthlySalesData,
-          inventoryMetrics,
-          customerSegmentation,
+          inventoryMetrics: inventoryMetrics[0],
+          customerAnalytics: {
+            totalCustomers: customerSegmentation.length,
+            averageLifetimeValue:
+              customerSegmentation.reduce(
+                (acc, cur) => acc + cur.totalSpent,
+                0,
+              ) / customerSegmentation.length || 0,
+            customerSegmentation,
+          },
+          kpis: {
+            averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+            conversionRate:
+              activeUsers > 0 ?
+                ((totalOrders / activeUsers) * 100).toFixed(2)
+              : 0,
+            stockTurnoverRate:
+              inventoryMetrics[0]?.totalStocks > 0 ?
+                totalRevenue / inventoryMetrics[0].totalStocks
+              : 0,
+          },
         };
         // set cache data, analyticsData is assigned to cacheAnalytics (ln: 51), remains 10 min in cache
         cache.set('dashboardAnalytics', analyticsData, 600);
