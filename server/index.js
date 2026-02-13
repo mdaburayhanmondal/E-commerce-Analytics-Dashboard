@@ -194,28 +194,20 @@ async function run() {
                       branches: [
                         {
                           case: {
-                            $lt: ['daysSinceLastPurchase', 30],
-                          },
-                          then: 'Regular',
-                        },
-                        {
-                          case: {
-                            $lt: ['daysSinceLastPurchase', 7],
-                          },
-                          then: 'Active',
-                        },
-                        {
-                          case: {
                             $and: [
-                              {
-                                $lt: ['daysSinceLastPurchase', 7],
-                              },
-                              {
-                                $gt: ['totalSpent', 1000],
-                              },
+                              { $lt: ['$daysSinceLastPurchase', 7] },
+                              { $gt: ['$totalSpent', 1000] },
                             ],
                           },
                           then: 'VIP',
+                        },
+                        {
+                          case: { $lt: ['$daysSinceLastPurchase', 7] },
+                          then: 'Active',
+                        },
+                        {
+                          case: { $lt: ['$daysSinceLastPurchase', 30] },
+                          then: 'Regular',
                         },
                       ],
                       default: 'At Risk',
@@ -291,5 +283,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running ---> http://localhost:${port}`);
 });
-
-// Z8MReSGN9q2v2BGG
