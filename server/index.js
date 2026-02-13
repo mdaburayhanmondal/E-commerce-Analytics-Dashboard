@@ -50,7 +50,7 @@ async function run() {
       try {
         const cacheAnalytics = cache.get('dashboardAnalytics');
         if (cacheAnalytics) {
-          return res.json({ message: 'Cached data:', cacheAnalytics });
+          return res.json({ cacheAnalytics });
         }
         // handle jobs parallelly
         const [
