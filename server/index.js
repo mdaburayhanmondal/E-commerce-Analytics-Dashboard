@@ -219,7 +219,7 @@ async function run() {
             .toArray(),
         ]);
 
-        const { totalRevenue, totalOrders } = totalRevenueData[0];
+        const { totalRevenue = 0, totalOrders = 0 } = totalRevenueData[0] || {};
 
         const analyticsData = {
           activeUsers,
