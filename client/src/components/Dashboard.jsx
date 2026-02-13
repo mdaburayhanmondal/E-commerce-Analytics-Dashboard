@@ -215,6 +215,91 @@ const Dashboard = () => {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          {/* summery stats */}
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+            <div className="">
+              <p className="text-sm text-gray-500">Highest Revenue</p>
+              <p className="text-xl font-semibold mt-1">
+                {formatCurrency(
+                  Math.max(...data.monthlySalesData.map((d) => d.revenue)),
+                )}
+              </p>
+            </div>
+            <div className="">
+              <p className="text-sm text-gray-500">Average Revenue</p>
+              <p className="text-xl font-semibold mt-1">
+                {formatCurrency(
+                  data?.monthlySalesData.reduce(
+                    (acc, cur) => acc + cur.revenue,
+                    0,
+                  ) / data.monthlySalesData.length,
+                )}
+              </p>
+            </div>
+            <div className="">
+              <p className="text-sm text-gray-500">Total Orders</p>
+              <p className="text-xl font-semibold mt-1">
+                {data?.monthlySalesData.reduce(
+                  (acc, cur) => acc + cur.orders,
+                  0,
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* inventory and customer metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* inventory */}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Inventory Metrix</h2>
+            <div className="space-y-4 flex flex-col md:flex-row md:justify-between md:items-center md:space-y-0">
+              <div className="">
+                <p className="text-gray-500">Total Stocks</p>
+                <p className="text-2xl font-semibold text-green-500">
+                  {data?.inventoryMetrics?.totalStocks}
+                </p>
+              </div>
+              <div className="">
+                <p className="text-gray-500">Low Stock Items</p>
+                <p className="text-2xl font-semibold text-orange-500">
+                  {data?.inventoryMetrics?.lowStock}
+                </p>
+              </div>
+              <div className="">
+                <p className="text-gray-500">Out of Stock</p>
+                <p className="text-2xl font-semibold text-red-500">
+                  {data?.inventoryMetrics?.outOfStock}
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* customer */}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Customer Analytics</h2>
+            <div className="space-y-4 flex flex-col md:flex-row md:justify-between md:items-center md:space-y-0">
+              <div className="">
+                <p className="text-gray-500">Total Customers</p>
+                <p className="text-2xl font-semibold text-green-500">
+                  {data?.customerAnalytics?.totalCustomers}
+                </p>
+              </div>
+              <div className="">
+                <p className="text-gray-500">Average Lifetime Value</p>
+                <p className="text-2xl font-semibold text-orange-500">
+                  {formatCurrency(
+                    data?.customerAnalytics?.averageLifetimeValue,
+                  )}
+                </p>
+              </div>
+              <div className="">
+                <p className="text-gray-500">Average Order Value</p>
+                <p className="text-2xl font-semibold text-red-500">
+                  {formatCurrency(data?.kpis?.averageOrderValue)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
