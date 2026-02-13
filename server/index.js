@@ -59,6 +59,7 @@ async function run() {
           totalRevenueData,
           monthlySalesData,
           inventoryMetrics,
+          customerSegmentation,
         ] = await Promise.all([
           usersCollection.countDocuments(),
           productsCollection.countDocuments(),
@@ -154,7 +155,76 @@ async function run() {
               },
             ])
             .toArray(),
-          //
+          // customer segmentation
+          ordersCollection
+            .aggregate([
+              {
+                $group: {
+                  _id: '$userId',
+                  totalSpent: {
+                    $sum: '$totalAmount',
+                  },
+                  orderCount: {
+                    $sum: 1,
+                  },
+                  averageOrderValue: {
+                    $avg: '$totalAmount',
+                  },
+                  lastPurchaseDate: {
+                    $max: '$orderDate',
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  daysSinceLastPurchase: {
+                    $dateDiff: {
+                      startDate: '$lastPurchaseDate',
+                      endDate: '$$NOW',
+                      // Built-in variable for current time
+                      unit: 'day', // Can be "year", "month", "day", "hour", etc.
+                    },
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  segment: {
+                    $switch: {
+                      branches: [
+                        {
+                          case: {
+                            $lt: ['daysSinceLastPurchase', 30],
+                          },
+                          then: 'Regular',
+                        },
+                        {
+                          case: {
+                            $lt: ['daysSinceLastPurchase', 7],
+                          },
+                          then: 'Active',
+                        },
+                        {
+                          case: {
+                            $and: [
+                              {
+                                $lt: ['daysSinceLastPurchase', 7],
+                              },
+                              {
+                                $gt: ['totalSpent', 1000],
+                              },
+                            ],
+                          },
+                          then: 'VIP',
+                        },
+                      ],
+                      default: 'At Risk',
+                    },
+                  },
+                },
+              },
+            ])
+            .toArray(),
         ]);
 
         const analyticsData = {
@@ -163,6 +233,7 @@ async function run() {
           totalRevenueData,
           monthlySalesData,
           inventoryMetrics,
+          customerSegmentation,
         };
         // set cache data, analyticsData is assigned to cacheAnalytics (ln: 51), remains 10 min in cache
         cache.set('dashboardAnalytics', analyticsData, 600);
