@@ -40,7 +40,8 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          'http://localhost:3000/api/dashboard/analytics',
+          import.meta.env.VITE_API_URL ||
+            'http://localhost:3000/api/dashboard/analytics',
         );
         setData(response.data);
       } catch (err) {
